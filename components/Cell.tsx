@@ -1,3 +1,4 @@
+import FontAwesome from "@expo/vector-icons/FontAwesome";
 import React from "react";
 import { TouchableOpacity, Text, StyleSheet, View } from "react-native";
 
@@ -38,27 +39,31 @@ export default function Cell({ data, onPress, onLongPress, row, col, MAX_ROW, MA
     <TouchableOpacity
       style={[
         {
-          width : blockSize,
-          height : blockSize
+          width: blockSize - 10,
+          height: blockSize - 10
         },
         styles.cell,
         (col + row) % 2 == 0 ? styles.light : styles.heavy,
         data.revealed && styles.revealed,
         row == 0 && col == 0 ? styles.topLeft : "",
-        row == 0 && col == MAX_COL-1 ? styles.topRight : "",
-        row == MAX_ROW-1 && col == 0 ? styles.bottomLeft : "",
-        row == MAX_ROW-1 && col == MAX_COL-1 ? styles.bottomRight : "",
+        row == 0 && col == MAX_COL - 1 ? styles.topRight : "",
+        row == MAX_ROW - 1 && col == 0 ? styles.bottomLeft : "",
+        row == MAX_ROW - 1 && col == MAX_COL - 1 ? styles.bottomRight : "",
         data.revealed && data.isMine ? styles.bombBackground : ""
       ]}
       onPress={data.flagged ? () => { } : onPress}
       onLongPress={onLongPress}
     >
       {data.revealed ? (
-        <Text style={{ fontSize: blockSize-12, fontWeight: "bold", color: getColor(data.neighborMines) }}>
-          {data.isMine ? "💣" : data.neighborMines > 0 ? data.neighborMines : ""}
+        <Text style={{
+          fontSize: blockSize - 20, fontWeight: "bold", color: getColor(data.neighborMines), textShadowColor: getColor(data.neighborMines), 
+          textShadowOffset: { width: 0, height: 0 },
+          textShadowRadius: 5,
+        }}>
+          {data.isMine ? <FontAwesome name="bomb" size={blockSize - 20} color={"white"} /> : data.neighborMines > 0 ? data.neighborMines : ""}
         </Text>
       ) : (
-        <Text style={{ fontSize: blockSize-12, fontWeight: "bold" }}>{data.flagged ? "🚩" : ""}</Text>
+        <Text style={{ fontSize: blockSize - 20, fontWeight: "bold" }}>{data.flagged ? <FontAwesome name="flag" size={blockSize - 20} color={"red"}/>: ""}</Text>
       )}
     </TouchableOpacity>
   );
@@ -74,6 +79,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 5,
     elevation: 5,
+    margin: 2,
+    borderRadius: 10
   },
   revealed: {
     backgroundColor: "#e0e5e5",
@@ -89,21 +96,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#99a3a3",
   },
   topLeft: {
-    borderTopLeftRadius : 10,
+    borderTopLeftRadius: 10,
   },
   topRight: {
-    borderTopRightRadius : 10,
+    borderTopRightRadius: 10,
   },
   bottomLeft: {
-    borderBottomLeftRadius : 10,
+    borderBottomLeftRadius: 10,
   },
   bottomRight: {
-    borderBottomRightRadius : 10,
+    borderBottomRightRadius: 10,
   },
   bombBackground: {
     backgroundColor: "#EF5A6F",
   },
-  
+
 
 
 });

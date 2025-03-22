@@ -129,12 +129,13 @@ export default function GameScreen() {
         <SafeAreaProvider>
             <SafeAreaView style={styles.container}>
                 <StatusBar barStyle="dark-content" backgroundColor="#e0e5e5" />
-
-                <View style={{justifyContent : 'center' , alignItems: 'center', paddingHorizontal:10}}>
-                    <Text style={{fontSize: 35 , fontWeight : "bold", textAlign:'center', letterSpacing: 5 , color:'#99a3a3' , paddingVertical : 20}}>
-                        X MINESWEEPER X
-                    </Text>
-                </View>
+                <GameStatus 
+                    flag={flag}
+                    mode={MODE}
+                    time={time}
+                    mine={MINES}
+                    resetGame={resetGame}
+                />
                 <MineSweeperBoard
                     COLS={COLS}
                     ROWS={ROWS}
@@ -145,15 +146,6 @@ export default function GameScreen() {
                     startButtonAnim={startButtonAnim}
                     startGame={startGame}
                     toggleFlag={toggleFlag}
-                />
-
-
-                <GameStatus 
-                    flag={flag}
-                    mode={MODE}
-                    time={time}
-                    mine={MINES}
-                    resetGame={resetGame}
                 />
 
             </SafeAreaView>

@@ -1,9 +1,31 @@
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { useAppState } from '../../store/StateContext';
 import { View, Text, StyleSheet, StatusBar, TouchableOpacity } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { useEffect, useState } from 'react';
 
 export default function Settings() {
   const { ROWS, setROWS, COLS, setCOLS, MINES, setMINES, FLAGS, setFLAGS, MODE, setMODE } = useAppState();
+
+  const [count , setCount] = useState(1);
+
+  const checkMode = () => {
+    if(count === 1) {
+      easyMode();
+    }else if(count === 2){
+      mediumMode();
+    }else if(count === 3){
+      hardMode();
+    }else if(count < 1){
+      setCount(1);
+    }else if(count > 3){
+      setCount(3);
+    }
+  }
+
+  useEffect(()=>{
+    checkMode();
+  },[count])
 
   const easyMode = () => {
     setMODE("EASY");
@@ -16,7 +38,7 @@ export default function Settings() {
   const mediumMode = () => {
     setMODE("MEDIUM");
     setROWS(12);
-    setCOLS(12);
+    setCOLS(8);
     setMINES(20);
     setFLAGS(20);
   }
@@ -24,7 +46,7 @@ export default function Settings() {
   const hardMode = () => {
     setMODE("HARD");
     setROWS(16);
-    setCOLS(16);
+    setCOLS(8);
     setMINES(40);
     setFLAGS(40);
   }
@@ -37,7 +59,7 @@ export default function Settings() {
 
         <View style={{ justifyContent: 'center', alignItems: 'center', paddingHorizontal: 10 }}>
           <Text style={{ fontSize: 35, fontWeight: "bold", textAlign: 'center', letterSpacing: 5, color: '#99a3a3', paddingVertical: 20 }}>
-            X SETTING X
+            SETTING
           </Text>
         </View>
 
@@ -47,14 +69,12 @@ export default function Settings() {
               GAME MODE
             </Text>
             <View style={{flexDirection:'row' , justifyContent: 'space-around'}}>
-              <TouchableOpacity style={[styles.button , {backgroundColor:'green'}]} onPress={easyMode}>
-                <Text style={styles.buttonText}>EASY</Text>
+              <TouchableOpacity onPress={() => setCount((prev) => prev-1)}>
+                <FontAwesome name='chevron-left' size={24} style={{textAlign: 'center'}}/>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.button , {backgroundColor:'blue'}]} onPress={mediumMode}>
-                <Text style={styles.buttonText}>MEDIUM</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.button} onPress={hardMode}>
-                <Text style={styles.buttonText}>HARD</Text>
+              <Text style={{fontSize: 24 , textAlign: 'center' , color:'#99a3a3'}}>{MODE}</Text>
+              <TouchableOpacity onPress={() => setCount((prev) => prev+1)}>
+                <FontAwesome name='chevron-right' size={24} style={{textAlign: 'center'}}/>
               </TouchableOpacity>
             </View>
           </View>

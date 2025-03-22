@@ -68,6 +68,8 @@ const styles = StyleSheet.create({
         // flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
+        padding : 20
+        // flexWrap : 'wrap'
     },
     status: {
         // flex: 1,
@@ -78,8 +80,8 @@ const styles = StyleSheet.create({
     },
     startButton: {
         position: 'absolute',
-        left: 90,
-        transform: [{ translateY: -40 }],
+        // left: 90,
+        // transform: [{ translateY: -40 }],
         zIndex: 10,
     },
     startButtonText: {
