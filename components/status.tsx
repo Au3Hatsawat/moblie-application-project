@@ -1,6 +1,5 @@
-import FontAwesome from "@expo/vector-icons/FontAwesome";
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { useFonts } from "expo-font";
+import { StyleSheet, Text, Pressable, View } from "react-native";
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
 interface GameStatusProps {
     flag: number;
@@ -11,74 +10,121 @@ interface GameStatusProps {
 }
 
 const GameStatus = ({ flag, time, mode, mine, resetGame }: GameStatusProps) => {
-    const [fontsLoaded] = useFonts({
-        "DIGI": require("../assets/fonts/digital-7.regular.ttf"), // เปลี่ยนชื่อไฟล์ให้ตรงกับที่ใช้งาน
-    });
+    // Helper function to determine difficulty color
+    const getDifficultyColor = (mode: string) => {
+        switch(mode) {
+            case "EASY": return "#4CAF50";
+            case "MEDIUM": return "#2196F3";
+            case "HARD": return "#F44336";
+            default: return "#4CAF50";
+        }
+    };
 
     return (
-        <View style={{flexDirection : 'row' , padding : 10 , justifyContent : 'space-between'}}>
-            <View>
-            </View>
-            <View style={{gap: 10}}>
-                <View style={{flexDirection : 'row',justifyContent : 'center',alignItems :'center', gap: 20}}>
-                    <FontAwesome name="bomb" size={24}/>
-                    <Text style={{textAlign:'center' , fontFamily:'DIGI' , fontSize: 24}}>
-                        {mine}
-                    </Text>
-                    <FontAwesome name="flag" size={24} />
-                    <Text style={{textAlign:'center' , fontFamily:'DIGI' , fontSize: 24}}>
-                        {flag}
-                    </Text>
-                    <FontAwesome name="clock-o" size={24}/>
-                    <Text style={{textAlign:'center' , fontFamily:'DIGI' , fontSize: 24}}>
-                        {time} s
+        <View style={styles.container}>
+            <View style={styles.statsGrid}>
+                <View style={styles.statItem}>
+                    <View style={styles.statHeader}>
+                        <FontAwesome5 name="bomb" size={16} color="#D0E1F9" />
+                        <Text style={styles.statLabel}>MINES</Text>
+                    </View>
+                    <Text style={styles.statValue}>{mine}</Text>
+                </View>
+                
+                <View style={styles.statItem}>
+                    <View style={styles.statHeader}>
+                        <Ionicons name="time-outline" size={16} color="#D0E1F9" />
+                        <Text style={styles.statLabel}>TIME</Text>
+                    </View>
+                    <Text style={styles.statValue}>{time}</Text>
+                </View>
+                
+                <View style={styles.statItem}>
+                    <View style={styles.statHeader}>
+                        <FontAwesome5 name="flag" size={16} color="#D0E1F9" />
+                        <Text style={styles.statLabel}>FLAGS</Text>
+                    </View>
+                    <Text style={styles.statValue}>{flag}</Text>
+                </View>
+                
+                <View style={styles.statItem}>
+                    <View style={styles.statHeader}>
+                        <FontAwesome5 name="gamepad" size={16} color="#D0E1F9" />
+                        <Text style={styles.statLabel}>MODE</Text>
+                    </View>
+                    <Text style={[styles.statValue, { color: getDifficultyColor(mode) }]}>
+                        {mode}
                     </Text>
                 </View>
             </View>
-            <View>
-                <TouchableOpacity onPress={resetGame}>
-                    <FontAwesome name="rotate-left" size={24}/>
-                </TouchableOpacity>
-            </View>
+            
+            <Pressable 
+                style={styles.resetButton}
+                onPress={resetGame}
+                android_ripple={{ color: 'rgba(255, 255, 255, 0.2)', borderless: false }}
+            >
+                <FontAwesome5 name="redo-alt" size={16} color="#fff" style={{marginRight: 8}} />
+                <Text style={styles.resetButtonText}>RESTART GAME</Text>
+            </Pressable>
         </View>
-
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        // flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#e0e5e5",
+        paddingTop: 10,
+    },
+    statsGrid: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
     },
-    inputBox: {
-        flexDirection: "row",
-        alignItems: "center",
-        backgroundColor: "#99a3a3",
-        borderRadius: 10,
+    statItem: {
+        width: '48%',
+        backgroundColor: 'rgba(255,255,255,0.07)',
+        borderRadius: 12,
+        padding: 15,
+        marginBottom: 15,
+    },
+    statHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 5,
+    },
+    statLabel: {
+        color: '#D0E1F9',
+        fontSize: 14,
+        marginLeft: 8,
+        opacity: 0.8,
+    },
+    statValue: {
+        color: 'white',
+        fontSize: 22,
+        fontWeight: 'bold',
+    },
+    resetButton: {
+        backgroundColor: '#F44336',
+        borderRadius: 12,
         paddingVertical: 15,
-        paddingHorizontal: 30,
-        width: 180,
-        height: 70,
+        paddingHorizontal: 20,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 8,
         shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
         shadowOpacity: 0.3,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 5,
-        margin: 20,
-        elevation: 8
+        shadowRadius: 4.65,
     },
-    icon: {
-        marginRight: 10,
-    },
-    input: {
-        fontSize: 40,
-        fontFamily: "DIGI",
-        color: "white",
-        textAlign: "center",
-        flex: 1,
-    },
+    resetButtonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+        letterSpacing: 1,
+    }
 });
 
 export default GameStatus;

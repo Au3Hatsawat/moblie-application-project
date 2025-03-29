@@ -1,18 +1,18 @@
-import { StyleSheet, StatusBar, Dimensions, Animated, Easing, View, Text } from "react-native";
+import { StyleSheet, StatusBar, Dimensions, Animated, Easing, View, Text, Pressable } from "react-native";
 import { useEffect, useRef, useState } from "react";
 import { generateBoard } from "../../utils/generateBoard";
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import MineSweeperBoard from "@/components/board";
 import GameStatus from "@/components/status";
 import { useAppState } from "../../store/StateContext";
-
-// const ROWS = 8, COLS = 8, MINES = 10, FLAGS = 10, TIMES = 0;
+import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import GameAlert from "@/components/GameAlert";
+import * as Haptics from 'expo-haptics';
 
 export default function GameScreen() {
+    const { ROWS, COLS, MINES, FLAGS, MODE } = useAppState();
 
-    const {ROWS, COLS, MINES, FLAGS, MODE} = useAppState();
-
-    const { width, height } = Dimensions.get('window');
+    const { width } = Dimensions.get('window');
     const blockSize = Math.floor(width / COLS);
     const [board, setBoard] = useState(generateBoard(ROWS, COLS, MINES));
     const [gameOver, setGameOver] = useState(false);
@@ -20,18 +20,40 @@ export default function GameScreen() {
     const [flag, setFlag] = useState(FLAGS);
     const [totalSpace, setTotalSpace] = useState(0);
     const [gameStarted, setGameStarted] = useState(false);
+    
+    // Alert state
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertType, setAlertType] = useState<'win' | 'lose'>('lose');
+    
+    // Animations
     const startButtonAnim = useRef(new Animated.Value(1)).current;
-
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(50)).current;
+    
+    useEffect(() => {
+        Animated.parallel([
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 500,
+                useNativeDriver: true,
+            }),
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 500,
+                useNativeDriver: true,
+            }),
+        ]).start();
+    }, []);
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
 
-        if (gameStarted && time >= 0) {
+        if (gameStarted && !gameOver && time >= 0) {
             timer = setInterval(() => { setTime(prevTime => prevTime + 1); }, 1000);
         }
 
         return () => clearInterval(timer);
-    }, [gameStarted, time]);
+    }, [gameStarted, gameOver, time]);
 
     const revealCell = (row: number, col: number) => {
         try {
@@ -70,30 +92,56 @@ export default function GameScreen() {
             duration: 500,
             easing: Easing.ease,
             useNativeDriver: true,
-        }).start(() => setGameStarted(true)); // ซ่อนปุ่มหลัง animation จบ
+        }).start(() => setGameStarted(true));
+        
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     };
 
     const gameStatus = (row: number, col: number) => {
         let newBoard = [...board];
         if (gameOver || board[row][col].revealed) return;
-        startGame();
+        
+        if (!gameStarted) {
+            startGame();
+        }
 
         if (board[row][col].isMine) {
-            newBoard[row][col] = { ...newBoard[row][col], revealed: true };
-            alert("Game Over! 💥");
-            setGameOver(true);
+            // Reveal all mines when player hits one
+            board.forEach((rowArr, r) => {
+                rowArr.forEach((cell, c) => {
+                    if (cell.isMine) {
+                        newBoard[r][c] = { ...newBoard[r][c], revealed: true };
+                    }
+                });
+            });
+            
+            setBoard(newBoard);
+            
+            // Show lose alert with slight delay for dramatic effect
+            setTimeout(() => {
+                setAlertType('lose');
+                setAlertVisible(true);
+                setGameOver(true);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+            }, 500);
         } else {
             revealCell(row, col);
             setBoard(newBoard);
-        }
-
-        if (totalSpace === (ROWS * COLS) - MINES) {
-            alert("You Win! 🚩");
-            setGameOver(true);
+            
+            // Check win condition with slight delay to ensure board updates first
+            setTimeout(() => {
+                if (totalSpace >= (ROWS * COLS) - MINES - 1) {
+                    setAlertType('win');
+                    setAlertVisible(true);
+                    setGameOver(true);
+                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                }
+            }, 300);
         }
     }
 
     const resetGame = () => {
+        setAlertVisible(false);
         setBoard(generateBoard(ROWS, COLS, MINES));
         setTime(0);
         setTotalSpace(0);
@@ -103,85 +151,188 @@ export default function GameScreen() {
         startButtonAnim.setValue(1);
     }
 
-    useEffect(()=>{
+    useEffect(() => {
         resetGame();
-    },[gameOver,MODE]);
+    }, [MODE]);
 
 
     const toggleFlag = (row: number, col: number) => {
+        if (gameOver) return;
         if (flag === 0 && !board[row][col].flagged) return;
         if (board[row][col].revealed) return;
+        
         let newBoard = [...board];
         newBoard[row][col] = { ...newBoard[row][col], flagged: !newBoard[row][col].flagged };
 
         if (newBoard[row][col].flagged) {
             setFlag((prev) => prev - 1);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         } else {
             setFlag((prev) => prev + 1);
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         }
-
 
         setBoard(newBoard);
     }
 
-
     return (
         <SafeAreaProvider>
-            <SafeAreaView style={styles.container}>
-                <StatusBar barStyle="dark-content" backgroundColor="#e0e5e5" />
-                <GameStatus 
-                    flag={flag}
-                    mode={MODE}
-                    time={time}
-                    mine={MINES}
-                    resetGame={resetGame}
-                />
-                <MineSweeperBoard
-                    COLS={COLS}
-                    ROWS={ROWS}
-                    blockSize={blockSize}
-                    board={board}
-                    gameStarted={gameStarted}
-                    gameStatus={gameStatus}
-                    startButtonAnim={startButtonAnim}
-                    startGame={startGame}
-                    toggleFlag={toggleFlag}
-                />
+            <View style={styles.container}>
+                <StatusBar barStyle="light-content" backgroundColor="#1a2639" />
 
-            </SafeAreaView>
+                <View style={styles.header}>
+                    <View style={styles.titleContainer}>
+                        <Text style={styles.titleTop}>MINESWEEPER</Text>
+                    </View>
+                    <View style={styles.subtitle}>
+                        <FontAwesome5 name="bomb" size={18} color="#D0E1F9" />
+                        <Text style={styles.subtitleText}>CLEAR THE MINEFIELD</Text>
+                    </View>
+                </View>
+
+                <Animated.View 
+                    style={[
+                        styles.gameContainer,
+                        {
+                            opacity: fadeAnim,
+                            transform: [{ translateY: slideAnim }]
+                        }
+                    ]}
+                >
+                    {!gameStarted && (
+                        <Animated.View style={[styles.startButtonContainer, {
+                            opacity: startButtonAnim,
+                            transform: [{
+                                scale: startButtonAnim.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [0.5, 1],
+                                })
+                            }]
+                        }]}>
+                            <Pressable 
+                                onPress={startGame} 
+                                style={styles.startButton}
+                                android_ripple={{ color: 'rgba(255, 255, 255, 0.2)', borderless: true }}
+                            >
+                                <FontAwesome5 name="play" size={30} color="#D0E1F9" />
+                            </Pressable>
+                        </Animated.View>
+                    )}
+
+                    <MineSweeperBoard
+                        COLS={COLS}
+                        ROWS={ROWS}
+                        blockSize={blockSize}
+                        board={board}
+                        gameStarted={gameStarted}
+                        gameStatus={gameStatus}
+                        startButtonAnim={startButtonAnim}
+                        startGame={startGame}
+                        toggleFlag={toggleFlag}
+                    />
+                </Animated.View>
+
+                <View style={styles.footer}>
+                    <GameStatus
+                        flag={flag}
+                        mode={MODE}
+                        time={time}
+                        mine={MINES}
+                        resetGame={resetGame}
+                    />
+                    
+                    <View style={styles.swipeHint}>
+                        <Text style={styles.footerText}>Swipe to access settings</Text>
+                        <Ionicons name="chevron-forward" size={16} color="#D0E1F9" />
+                    </View>
+                </View>
+                
+                {/* Custom Game Alert */}
+                <GameAlert 
+                    visible={alertVisible}
+                    type={alertType}
+                    onClose={resetGame}
+                />
+            </View>
         </SafeAreaProvider>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#e0e5e5" },
-    title: { flex: 1, fontSize: 24, justifyContent: 'center', fontWeight: "bold", marginBottom: 20, paddingHorizontal: 10 },
-    mineSweeper: { flex: 9, justifyContent: "center", alignItems: "center", width: "100%" },
-    board: {
-        flex: 10,
-        // marginVertical : 20,
-        // backgroundColor : 'red',
+    container: { 
+        flex: 1, 
+        backgroundColor: "#1a2639",
+        paddingHorizontal: 20,
+    },
+    header: {
+        paddingVertical: 20,
         alignItems: 'center',
-        justifyContent: 'center',
-        // paddingVertical : 100,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(255,255,255,0.1)',
     },
-    status: {
-        flex: 1,
+    titleContainer: {
+        alignItems: 'center',
+    },
+    titleTop: {
+        fontSize: 40,
+        fontWeight: "700",
+        color: '#fff',
+        letterSpacing: 5,
+        textShadowColor: 'rgba(0, 0, 0, 0.75)',
+        textShadowOffset: { width: 2, height: 2 },
+        textShadowRadius: 5
+    },
+    subtitle: {
         flexDirection: 'row',
-        gap: 10,
-        justifyContent: 'center',
-        alignItems: 'center'
+        alignItems: 'center',
+        marginTop: 8,
     },
-    startButton: {
+    subtitleText: {
+        fontSize: 14,
+        color: '#D0E1F9',
+        marginLeft: 8,
+        letterSpacing: 1.5,
+    },
+    gameContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+        paddingVertical: 20,
+    },
+    startButtonContainer: {
         position: 'absolute',
-        // top: '10%',
-        left: 89,
-        transform: [{ translateY: -124 }],
         zIndex: 10,
     },
-    startButtonText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        fontSize: 18,
+    startButton: {
+        width: 70,
+        height: 70,
+        borderRadius: 35,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        elevation: 8,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 4.65,
+    },
+    footer: {
+        paddingBottom: 20,
+    },
+    swipeHint: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingTop: 10,
+    },
+    footerText: {
+        color: '#D0E1F9',
+        fontSize: 14,
+        opacity: 0.6,
+        marginRight: 5,
     },
 });
